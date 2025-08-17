@@ -26,14 +26,14 @@ pip install -r requirements.txt
 3. Run the application:
 
 ```bash
-streamlit run main.py
+python main.py
 ```
 
 ## 🏗️ Architecture
 
 The system consists of several modular components:
 
-- **`main.py`**: Streamlit web interface and application orchestration
+- **`main.py`**: Gradio web interface and application orchestration
 - **`models.py`**: AI model loading and initialization with caching
 - **`processing.py`**: Video processing pipeline coordinator
 - **`captions.py`**: Frame extraction and image captioning
@@ -90,7 +90,7 @@ Ask natural language questions about your videos:
 
 ### AI Pipeline
 - GPU acceleration when available
-- Efficient model caching with Streamlit
+- Efficient model caching with Gradio
 - Batch processing for improved performance
 
 ### Database Schema
@@ -131,4 +131,4 @@ Open source project - see individual model licenses for AI components.
 
 ---
 
-*Built with Streamlit, PyTorch, and Transformers for seamless video intelligence.*
+*Built with Gradio, PyTorch, and Transformers for seamless video intelligence.*
