@@ -11,6 +11,12 @@ An intelligent video analysis system that extracts insights from videos through 
 - **Session Management**: Organize and revisit previous video analyses
 - **Real-time Webcam**: Live video capture and processing
 
+## 🌐 Live Demo
+
+Try the system live on Hugging Face Spaces: **[Video Analysis QA System](https://huggingface.co/spaces/ahohpotato/video-analysis-qa-system)**
+
+*No installation required - upload videos and start analyzing immediately!*
+
 ## 🚀 Getting Started
 
 ### Prerequisites
