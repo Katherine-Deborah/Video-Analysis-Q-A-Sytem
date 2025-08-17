@@ -1,6 +1,5 @@
 import librosa
 import torch
-import streamlit as st
 
 def extract_audio(video_path):
     """Extract audio from video file"""
@@ -9,7 +8,7 @@ def extract_audio(video_path):
         audio, sr = librosa.load(video_path, sr=16000)  # Whisper expects 16kHz
         return audio, sr
     except Exception as e:
-        st.error(f"Error extracting audio: {e}")
+        print(f"Error extracting audio: {e}")
         return None, None
 
 def transcribe_audio(audio, sr, models):

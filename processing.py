@@ -1,25 +1,23 @@
-import streamlit as st
 import time
-from captions import extract_frames, generate_caption
-from audio import extract_audio, transcribe_audio
 
 def process_video(video_path, session_id, models, conn):
-    """Process video: extract frames, generate captions, transcribe audio"""
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    """Original process_video function - maintains compatibility"""
     
     try:
-        # Extract frames
-        status_text.text("Extracting frames...")
+        # Import your modules
+        from captions import extract_frames, generate_caption
+        from audio import extract_audio, transcribe_audio
+        
+        # Extract frames with default interval
+        print("Extracting frames...")
         frames, timestamps = extract_frames(video_path, interval=0.5)
-        progress_bar.progress(0.2)  # 20%
         
         if not frames:
-            st.error("No frames could be extracted from the video.")
+            print("No frames could be extracted from the video.")
             return
         
         # Generate captions
-        status_text.text(f"Generating captions for {len(frames)} frames...")
+        print(f"Generating captions for {len(frames)} frames...")
         cursor = conn.cursor()
         
         for i, (frame, timestamp) in enumerate(zip(frames, timestamps)):
@@ -28,21 +26,16 @@ def process_video(video_path, session_id, models, conn):
                 "INSERT INTO captions (session_id, timestamp, caption) VALUES (?, ?, ?)",
                 (session_id, timestamp, caption)
             )
-            # Progress from 20% to 80% (60% range for captions)
-            progress_value = 0.2 + (i / len(frames)) * 0.6
-            progress_bar.progress(min(progress_value, 0.8))  # Ensure max 80%
             
             # Update status every 10 frames
             if i % 10 == 0:
-                status_text.text(f"Generating captions... {i+1}/{len(frames)}")
+                print(f"Generating captions... {i+1}/{len(frames)}")
         
         conn.commit()
-        progress_bar.progress(0.8)  # 80%
         
         # Extract and transcribe audio
-        status_text.text("Extracting and transcribing audio...")
+        print("Extracting and transcribing audio...")
         audio, sr = extract_audio(video_path)
-        progress_bar.progress(0.9)  # 90%
         
         if audio is not None and len(audio) > 0:
             transcription = transcribe_audio(audio, sr, models)
@@ -52,14 +45,83 @@ def process_video(video_path, session_id, models, conn):
             )
             conn.commit()
         else:
-            st.warning("No audio found in the video or audio extraction failed.")
+            print("No audio found in the video or audio extraction failed.")
         
-        progress_bar.progress(1.0)  # 100%
-        status_text.text("Processing complete!")
-        time.sleep(1)
+        print("Processing complete!")
         
     except Exception as e:
-        st.error(f"Error processing video: {str(e)}")
-    finally:
-        progress_bar.empty()
-        status_text.empty()
+        print(f"Error processing video: {str(e)}")
+
+def process_video_with_fps(video_path, session_id, models, conn, fps=5):
+    """Enhanced process_video function with FPS control"""
+    
+    try:
+        # Import your modules
+        from captions import extract_frames_with_fps, generate_caption, batch_generate_captions
+        from audio import extract_audio, transcribe_audio
+        
+        # Calculate interval from FPS
+        interval = 1.0 / fps
+        
+        # Extract frames with custom FPS
+        print(f"Extracting frames at {fps} FPS (interval: {interval:.2f}s)...")
+        frames, timestamps = extract_frames_with_fps(video_path, interval=interval)
+        
+        if not frames:
+            print("No frames could be extracted from the video.")
+            return
+        
+        # Generate captions (use batch processing for efficiency)
+        print(f"Generating captions for {len(frames)} frames...")
+        cursor = conn.cursor()
+        
+        # Option 1: Batch processing (more efficient)
+        try:
+            captions = batch_generate_captions(frames, models, batch_size=4)
+            
+            # Insert all captions
+            for i, (timestamp, caption) in enumerate(zip(timestamps, captions)):
+                cursor.execute(
+                    "INSERT INTO captions (session_id, timestamp, caption) VALUES (?, ?, ?)",
+                    (session_id, timestamp, caption)
+                )
+                
+                if i % 10 == 0:
+                    print(f"Inserting captions... {i+1}/{len(captions)}")
+        
+        except:
+            # Option 2: Fallback to individual processing
+            print("Batch processing failed, using individual processing...")
+            for i, (frame, timestamp) in enumerate(zip(frames, timestamps)):
+                caption = generate_caption(frame, models)
+                cursor.execute(
+                    "INSERT INTO captions (session_id, timestamp, caption) VALUES (?, ?, ?)",
+                    (session_id, timestamp, caption)
+                )
+                
+                if i % 10 == 0:
+                    print(f"Generating captions... {i+1}/{len(frames)}")
+        
+        conn.commit()
+        
+        # Extract and transcribe audio
+        print("Extracting and transcribing audio...")
+        audio, sr = extract_audio(video_path)
+        
+        if audio is not None and len(audio) > 0:
+            transcription = transcribe_audio(audio, sr, models)
+            cursor.execute(
+                "INSERT INTO transcriptions (session_id, transcription) VALUES (?, ?)",
+                (session_id, transcription)
+            )
+            conn.commit()
+        else:
+            print("No audio found in the video or audio extraction failed.")
+        
+        print("Processing complete!")
+        
+    except Exception as e:
+        print(f"Error processing video with FPS: {str(e)}")
+        # Fallback to original function
+        print("Falling back to original processing...")
+        process_video(video_path, session_id, models, conn)

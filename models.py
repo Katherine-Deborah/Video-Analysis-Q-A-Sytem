@@ -5,7 +5,6 @@ from transformers import (
     WhisperProcessor, WhisperForConditionalGeneration,
     AutoTokenizer, AutoModelForCausalLM
 )
-import streamlit as st
 
 def init_database():
     """Initialize SQLite database"""
@@ -43,26 +42,25 @@ def init_database():
     conn.commit()
     return conn
 
-@st.cache_resource
 def load_models():
-    """Load all AI models with caching"""
+    """Load all AI models"""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     try:
         # Load captioning model
-        st.info("Loading captioning model...")
+        print("Loading captioning model...")
         caption_model_id = "quadranttechnologies/qhub-blip-image-captioning-finetuned"
         caption_processor = AutoProcessor.from_pretrained(caption_model_id)
         caption_model = AutoModelForVision2Seq.from_pretrained(caption_model_id).to(device)
         
         # Load transcription model
-        st.info("Loading transcription model...")
+        print("Loading transcription model...")
         whisper_processor = WhisperProcessor.from_pretrained("openai/whisper-medium")
         whisper_model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-medium").to(device)
         whisper_model.config.forced_decoder_ids = None
         
         # Load QA model
-        st.info("Loading QA model...")
+        print("Loading QA model...")
         qa_tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-1.7B")
         qa_model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-1.7B",torch_dtype="auto",device_map="auto")
         
@@ -76,5 +74,5 @@ def load_models():
             'device': device
         }
     except Exception as e:
-        st.error(f"Error loading models: {e}")
+        print(f"Error loading models: {e}")
         return None
